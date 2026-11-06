@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  rubin-sunrise:
+    build: .
+    container_name: rubin-sunrise-demo
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount data directory for query files and simulator DB
+      - ./data:/app/data:ro
+      # Mount logs directory for persistent logging (optional)
+      - ./logs:/app/logs
+      # Mount templates for easy updates without rebuilding (optional)
+      - ./templates:/app/templates:ro
+    environment:
+      # Configuration can be overridden here
+      QUERY_FILE: "medium_query.txt"
+      INITIAL_OFFSET: "0.0"
+      VERBOSE: "False"
+      ENABLE_CONSOLE_OUTPUT: "True"
+    # Keep container running even if app exits
+    stdin_open: true
+    tty: true
+    # Restart policy for production (optional)
+    # restart: unless-stopped

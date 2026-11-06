@@ -3,24 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <!-- Load shared styles first -->
-    <link rel="stylesheet" href='/static/css/styles-shared.css'/>
+    <link rel="stylesheet" href='{{ g.url_prefix }}/static/css/styles-shared.css'/>
     <!-- Load color palette (switch by changing the filename) -->
     <!-- Available: colors-ocean.css, colors-sunset.css, colors-forest.css, colors-midnight.css -->
-    <link rel="stylesheet" href='/static/css/colors-sunrise.css'/>
+    <link rel="stylesheet" href='{{ g.url_prefix }}/static/css/colors-sunrise.css'/>
     <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
 </head>
 <body>
     <!-- Hero section with sunrise background -->
     <div class="hero">
         <div class="hero-title">
-            <h1>Rubin LSST progress:<br> {{date | safe}}</h1>
+            <h1>Rubin LSST progress demo<br> {{date | safe}}</h1>
             <!-- Countdown -->
             <div id="countdown-display">
                 <span id="countdown-value">Next simulated date in --</span>
             </div>
         </div>
-        <img src="/static/camera_footprints.png" alt="Camera footprints" class="hero-cameras">
-        <img src="/static/candiapl-logo.png" alt="Logo" class="hero-logo">
+        <img src="{{ g.url_prefix }}/static/camera_footprints.png" alt="Camera footprints" class="hero-cameras">
+        <img src="{{ g.url_prefix }}/static/candiapl-logo.png" alt="Logo" class="hero-logo">
     </div>
 
     <div class="container">
@@ -81,6 +81,7 @@
     <div id="server-data"
         data-version="{{ version }}"
         data-countdown="{{ countdown_seconds }}"
+        data-url-prefix="{{ g.url_prefix }}"
         hidden>
     </div>
     

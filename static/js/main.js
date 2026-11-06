@@ -78,6 +78,26 @@ function updateFig1Heading() {
 
 const loadedVersion = SERVER_DATA.version;
 
+// ============================================================
+// URL Prefix handling for portal proxy support
+// ============================================================
+
+// Read the URL prefix from the server-data element
+// When behind the CanDIAPL portal, this will be /launch/<slug>
+const urlPrefix = document.getElementById('server-data').dataset.urlPrefix || '';
+
+/**
+ * Build an API URL with the appropriate prefix for portal proxy.
+ * 
+ * @param {string} path - The API path (e.g., '/row_clicked')
+ * @returns {string} The full URL including prefix
+ */
+function buildApiUrl(path) {
+    return urlPrefix + path;
+}
+
+// ============================================================
+
 /**
  * Check if server has a new version and reload if so.
  * 
@@ -86,7 +106,7 @@ const loadedVersion = SERVER_DATA.version;
  */
 setInterval(async () => {
     try {
-        const resp = await fetch('/check_update');
+        const resp = await fetch(buildApiUrl('/check_update'));
         const data = await resp.json();
         if (data.version > loadedVersion) {
             location.reload();
@@ -144,7 +164,7 @@ function updateCountdown() {
  * Updates the global state variables: updating, progress, progressMsg, remaining
  */
 function refreshCountdown() {
-    fetch('/next_update')
+    fetch(buildApiUrl('/next_update'))
         .then(r => r.json())
         .then(data => {
             updating = data.updating;
