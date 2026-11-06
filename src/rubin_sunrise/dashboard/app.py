@@ -19,7 +19,7 @@ import time
 from pathlib import Path
 from typing import TYPE_CHECKING
 import psycopg2.extras
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, g
 
 #from rubin_sunrise.pipeline import _reclaim_memory
 from rubin_sunrise.dashboard.displays import TargetMap, TargetTimeSeries, ObservabilityData
@@ -70,6 +70,32 @@ def create_app(
         kwargs["static_folder"] = str(static_folder)
 
     app = Flask(__name__, **kwargs)
+
+    # Handle X-Forwarded-Prefix header from portal proxy
+    @app.before_request
+    def handle_forwarded_prefix():
+        """Store the forwarded prefix from the portal's proxy header.
+        
+        The CanDIAPL portal proxies requests and strips the /launch/<slug>/ prefix,
+        sending it via X-Forwarded-Prefix header. Store it in Flask's g object
+        for use in templates and redirects.
+        """
+        g.url_prefix = request.headers.get('X-Forwarded-Prefix', '')
+
+    # Health check endpoint for portal monitoring
+    @app.route('/healthz')
+    def healthz():
+        """Health check endpoint for CanDIAPL portal.
+        
+        Returns HTTP 200 to indicate the application is running and accessible.
+        No authentication required.
+        
+        Returns
+        -------
+        tuple
+            ('OK', 200) - Status message and HTTP status code
+        """
+        return 'OK', 200
 
     # helpers local to the app:
     def _render_plots(gn: int, mn: int, maptype: str, date) -> dict:

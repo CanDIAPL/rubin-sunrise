@@ -39,7 +39,7 @@ function initTableRowClickHandlers() {
                 mn:      currentMn
             };
 
-            fetch('/row_clicked', {
+            fetch(buildApiUrl('/row_clicked'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(rowMeta)
@@ -138,7 +138,7 @@ function sendMapType(maptype) {
     });
 
     // Fetch updated figures from server
-    fetch('/maptype_clicked', {
+    fetch(buildApiUrl('/maptype_clicked'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -197,7 +197,7 @@ function attachObsPlotClickHandler() {
         const selectedDate = point.x;  // ISO date string from Plotly
         
         // Send update request to server
-        fetch('/obs_plot_update', {
+        fetch(buildApiUrl('/obs_plot_update'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

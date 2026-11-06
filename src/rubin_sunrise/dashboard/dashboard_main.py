@@ -188,7 +188,7 @@ def run_display(db_name: str | None = None) -> None:
     try:
         logger.info('Starting display update...')
         # Wait for data collection to complete all cycles
-        app.run(port=PORT)
+        app.run(host='0.0.0.0', port=PORT)
         logger.info('Display update complete.')
     except KeyboardInterrupt:
         logger.info('Shutdown requested by user.')

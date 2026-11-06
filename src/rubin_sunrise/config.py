@@ -13,7 +13,7 @@ import astropy.units as u
 from astropy import coordinates as coord
 
 ########### USER INPUTS #########
-QUERY_FILE     = "small_query.txt" # File with user-selected targets
+QUERY_FILE     = "medium_query.txt" # File with user-selected targets
 INITIAL_OFFSET = 0.0               # declination limit to filter targets
 OBS_FLAGS      = False            # Additional observability flags available
 #################################
@@ -39,16 +39,16 @@ PG_PORT = 5432  # PostgreSQL server port (default: 5432)
 PG_TABLESPACE_PATH = "/var/lib/postgresql/custom_storage"  # Custom tablespace directory (optional)
 PG_TABLESPACE_NAME = "rubin_tablespace"  # Name for custom tablespace (only used if PG_TABLESPACE_PATH is set)
 
-DAYS_FORECAST = 20 # Number of days for which to calculate observability
+DAYS_FORECAST = 30 # Number of days for which to calculate observability
 DT = 5.0/60.0 # Time increment for observability plots (hours)
 LOC = coord.EarthLocation.of_site('LSST') # Rubin location for obs. plots
 
 # Simulated LSST survey (for testing)
-QUERY_TYPE = 'RSV' # Options: RSV, SIM, Local
-REFRESH_INTERVAL: int = 30 # refresh rate for simulated iterations
-SIM_HIST  = datetime(2026, 6, 3) # simulated historical data (prior to query)
-SIM_START = datetime(2026, 6, 4)  # simulated days start
-SIM_END   = datetime(2026, 7, 20) # simulated days end
+QUERY_TYPE = 'SIM' # Options: RSV, SIM, Local
+REFRESH_INTERVAL: int = 60 # refresh rate for simulated iterations
+SIM_HIST  = datetime(2025, 5, 1) # simulated historical data (prior to query)
+SIM_START = datetime(2025, 5, 2)  # simulated days start
+SIM_END   = datetime(2025, 11, 16) # simulated days end
 VERBOSE = False  # Show debug columns in table (gr_name, gr_num, mem_num)
 SIM_LSST_DB = "baseline_v3.3_200day.db"
 SIM_SPEEDUP_FACTOR: float = 720.0  # speedup multiplier: 1 real second = 720 simulated seconds
