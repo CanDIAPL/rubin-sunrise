@@ -24,6 +24,9 @@ from typing import TYPE_CHECKING
 from astropy.time import Time
 from datetime import timedelta, datetime
 
+import psycopg2
+import psycopg2.extras
+
 logger = logging.getLogger(__name__)
 
 from rubin_sunrise.config import (
@@ -89,8 +92,7 @@ def _reclaim_memory() -> None:
 
 # The main data loop:
 def data_loop(
-    conn,
-    cur,
+    pool,
     camera,
     user_id: int,
     flags_present: bool = False,
@@ -110,10 +112,8 @@ def data_loop(
 
     Parameters
     ----------  
-    conn : psycopg2.extensions.connection
-        PostgreSQL database connection for reading/writing data.
-    cur : psycopg2.extensions.cursor
-        Database cursor object for query execution.
+    pool : psycopg2.pool.SimpleConnectionPool
+        Connection pool for thread-safe database access.
     camera : Camera
         Camera footprint metadata object for the observing instrument.
     user_id : int
@@ -143,40 +143,50 @@ def data_loop(
     for date in simulation_dates(SIM_START, SIM_END):
         cycle_number += 1
         tstart = datetime.now()
+        
+        # Get connection from pool for this cycle
+        conn = pool.getconn()
+        try:
+            cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-        # Reading in data with simulated database option 
-        if QUERY_TYPE == 'SIM':
-            nightnum = date_to_nightnum(date, base_mjd)
-            logger.info(f"[CYCLE START #{cycle_number}] {date}, night #{nightnum}")
-            visits = sim_service(nightnum)
+            # Reading in data with simulated database option 
+            if QUERY_TYPE == 'SIM':
+                nightnum = date_to_nightnum(date, base_mjd)
+                logger.info(f"[CYCLE START #{cycle_number}] {date}, night #{nightnum}")
+                visits = sim_service(nightnum)
 
-        # Reading in data with RSV option    
-        if QUERY_TYPE == 'RSV':
-            logger.info(f"[CYCLE START #{cycle_number}] {date}")
-            visits = rsv_service(date)
+            # Reading in data with RSV option    
+            if QUERY_TYPE == 'RSV':
+                logger.info(f"[CYCLE START #{cycle_number}] {date}")
+                visits = rsv_service(date)
 
-        # Reading in data with local copy of RSV option    
-        if QUERY_TYPE == 'Local':
-            logger.info(f"[CYCLE START #{cycle_number}] {date}")
-            logger.debug("Attempting Local Copy")
-            visits = rsv_local(date, "local_rsv")
+            # Reading in data with local copy of RSV option    
+            if QUERY_TYPE == 'Local':
+                logger.info(f"[CYCLE START #{cycle_number}] {date}")
+                logger.debug("Attempting Local Copy")
+                visits = rsv_local(date, "local_rsv")
 
-        if visits.empty:
-            logger.warning(f"DATA MISSING for {date}")
-        else:     
-            populate_database(
-                    conn, cur, camera, user_id, visits, date, 
-                    shared_state=None
-                )
-            populate_forecast(conn, cur, user_id, 
-                              str(Time(date)+timedelta(days=DAYS_FORECAST)), 
-                              shared_state=None)
-            gc.collect()
-            logger.info(f"Updated data for {date}")
+            if visits.empty:
+                logger.warning(f"DATA MISSING for {date}")
+            else:     
+                populate_database(
+                        conn, cur, camera, user_id, visits, date, 
+                        shared_state=None
+                    )
+                populate_forecast(conn, cur, user_id, 
+                                  str(Time(date)+timedelta(days=DAYS_FORECAST)), 
+                                  shared_state=None)
+                gc.collect()
+                logger.info(f"Updated data for {date}")
 
-        if log_dir is not None and timestamp is not None:
-            log_table_size(cur, str(log_dir / f"table_size_{timestamp}.csv"), db_name=db_name)
-            monitoring_plots_collector(log_dir, timestamp)
+            if log_dir is not None and timestamp is not None:
+                log_table_size(cur, str(log_dir / f"table_size_{timestamp}.csv"), db_name=db_name)
+                monitoring_plots_collector(log_dir, timestamp)
+        finally:
+            # Always return connection to pool and close cursor
+            cur.close()
+            pool.putconn(conn)
+        
         _reclaim_memory()
         now = datetime.now()
         while Time(now) < Time(tstart)+timedelta(seconds=REFRESH_INTERVAL):

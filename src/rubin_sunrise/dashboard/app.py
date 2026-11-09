@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 def create_app(
     shared_state: SharedState,
-    conn,
+    pool,
     *,
     flags_present: bool = False,
     template_folder: str | Path | None = None,
@@ -48,9 +48,9 @@ def create_app(
     shared_state : SharedState
         Thread-safe state shared with the background data loop. Provides access
         to current data snapshots, progress information, and update tracking.
-    conn : psycopg2.extensions.connection
-        PostgreSQL database connection, kept open for the lifetime of the 
-        process. Used by route handlers to query the user-specific database.
+    pool : psycopg2.pool.SimpleConnectionPool
+        Connection pool for thread-safe database access. Used by route handlers 
+        to get connections for database queries.
     flags_present : bool, optional
         Whether user-defined observability flags are present in the database.
     template_folder : str | Path | None, optional
@@ -106,7 +106,7 @@ def create_app(
         - Visits time series for the target
         - Future observability of the target
 
-        Uses a short-lived cursor to minimize database connection overhead,
+        Gets a connection from the pool for thread-safe database access,
         then reclaims memory.
 
         Parameters
@@ -129,13 +129,20 @@ def create_app(
             - "fig2_html": HTML rendering of the visits time series
             - "fig3_html": HTML rendering of the observability plot
         """
-        local_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        # Get connection from pool
+        conn = pool.getconn()
         try:
-            fig1_html=TargetMap(gn,local_cur).make_html_visits_map(mn,maptype)
-            fig2_html=TargetTimeSeries(gn,mn,local_cur).make_html_visits_plot(mn,maptype)
-            fig3_html=ObservabilityData(gn,mn,local_cur,date, flags_present).make_html_obs_plot()
+            local_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+            try:
+                fig1_html=TargetMap(gn,local_cur).make_html_visits_map(mn,maptype)
+                fig2_html=TargetTimeSeries(gn,mn,local_cur).make_html_visits_plot(mn,maptype)
+                fig3_html=ObservabilityData(gn,mn,local_cur,date, flags_present).make_html_obs_plot()
+            finally:
+                local_cur.close()
         finally:
-            local_cur.close()
+            # Return connection to pool
+            pool.putconn(conn)
+        
         result = jsonify({"status": "ok", "fig1_html": fig1_html, 
                                           "fig2_html": fig2_html, 
                                           "fig3_html": fig3_html})
@@ -278,14 +285,20 @@ def create_app(
         window_days = int(data.get("window_days", 5))
         date = shared_state.snapshot()["date"]
         
-        local_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        # Get connection from pool
+        conn = pool.getconn()
         try:
-            fig3_html = ObservabilityData(gn, mn, local_cur, date, flags_present).make_html_obs_plot(
-                selected_date=selected_date, 
-                window_days=window_days
-            )
+            local_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+            try:
+                fig3_html = ObservabilityData(gn, mn, local_cur, date, flags_present).make_html_obs_plot(
+                    selected_date=selected_date, 
+                    window_days=window_days
+                )
+            finally:
+                local_cur.close()
         finally:
-            local_cur.close()
+            # Return connection to pool
+            pool.putconn(conn)
         
         result = jsonify({"status": "ok", "fig3_html": fig3_html})
         #_reclaim_memory()
