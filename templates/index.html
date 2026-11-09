@@ -8,6 +8,12 @@
     <!-- Available: colors-ocean.css, colors-sunset.css, colors-forest.css, colors-midnight.css -->
     <link rel="stylesheet" href='{{ g.url_prefix }}/static/css/colors-sunrise.css'/>
     <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+    <!-- Override static CSS paths with URL prefix for portal proxy support -->
+     <style>
+        .hero {
+            background: url('{{ g.url_prefix }}/static/sunrise_background.png') center / cover no-repeat;
+        }
+    </style>
 </head>
 <body>
     <!-- Hero section with sunrise background -->
@@ -86,10 +92,10 @@
     </div>
     
     <!-- Load main.js first for state and utilities -->
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ g.url_prefix }}{{ url_for('static', filename='js/main.js') }}"></script>
     
     <!-- Load handlers.js second for event listeners -->
-    <script src="{{ url_for('static', filename='js/handlers.js') }}"></script>
+    <script src="{{ g.url_prefix }}{{ url_for('static', filename='js/handlers.js') }}"></script>
 
 </body>
 </html>

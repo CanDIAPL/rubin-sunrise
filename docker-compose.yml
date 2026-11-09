@@ -7,12 +7,16 @@ services:
     ports:
       - "8000:8000"
     volumes:
+      # Mount source code
+      - ./src/rubin_sunrise:/app/src/rubin_sunrise
       # Mount data directory for query files and simulator DB
       - ./data:/app/data:ro
       # Mount logs directory for persistent logging (optional)
       - ./logs:/app/logs
       # Mount templates for easy updates without rebuilding (optional)
       - ./templates:/app/templates:ro
+      # Mount static files
+      - ./static:/app/static
     environment:
       # Configuration can be overridden here
       QUERY_FILE: "medium_query.txt"
