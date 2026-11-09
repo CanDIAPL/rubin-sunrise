@@ -14,6 +14,8 @@ import webbrowser
 from datetime import datetime
 from pathlib import Path
 
+import psycopg2.pool
+
 from rubin_sunrise.config import (
     DEFAULT_USER_ID,
     INITIAL_OFFSET,
@@ -146,12 +148,27 @@ def run_display(db_name: str | None = None) -> None:
     logging.getLogger('werkzeug').addFilter(QuietFilter())
 
     conn, cur, flags_present = get_database(db_name=db_name)
+    
+    # ── Create connection pool for thread-safe database access ───
+    # Close the initial connection and create a pool for multi-threaded use
+    cur.close()
+    conn.close()
+    
+    from rubin_sunrise.config import PG_HOST, PG_PORT
+    connection_pool = psycopg2.pool.SimpleConnectionPool(
+        minconn=2,
+        maxconn=10,
+        dbname=db_name,
+        host=PG_HOST,
+        port=PG_PORT,
+    )
+    logger.info("Connection pool created (min_conn=2, max_conn=10)")
 
     # ── Shared state & Flask app ────────────────────────────────
     shared_state = SharedState()
     app = create_app(
         shared_state,
-        conn,
+        connection_pool,
         flags_present=flags_present,
         template_folder=_PROJECT_ROOT / "templates",
         static_folder=_PROJECT_ROOT / "static",
@@ -168,7 +185,7 @@ def run_display(db_name: str | None = None) -> None:
 
     data_thread = threading.Thread(
         target=data_loop,
-        args=(shared_state, conn, cur, DEFAULT_USER_ID, flags_present, 
+        args=(shared_state, connection_pool, DEFAULT_USER_ID, flags_present, 
               run_dir, timestamp, db_name),
         daemon=False,
     )
@@ -193,6 +210,9 @@ def run_display(db_name: str | None = None) -> None:
     except KeyboardInterrupt:
         logger.info('Shutdown requested by user.')
     finally:
+        # Close connection pool
+        connection_pool.closeall()
+        logger.info('Connection pool closed.')
         # Signal monitor thread to stop and clean up
         stop_monitor.set()
         monitor_thread.join(timeout=10)
