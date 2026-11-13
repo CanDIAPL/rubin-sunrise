@@ -170,17 +170,18 @@ def create_app(
                 "<h2>Data loading…</h2>"
                 "<meta http-equiv='refresh' content='2'>"
             )
-        return render_template(
-            "index.html",
-            date=snap["date"],
-            fig1_html=snap["fig1_html"],
-            fig2_html=snap["fig2_html"],
-            fig3_html=snap["fig3_html"],
-            table_html=snap["table"],
-            version=snap["version"],
-            countdown_seconds=max(0, snap["next_update"] - time.time()),
-            flags_present=flags_present,
-        )
+        #return render_template(
+        #    "index.html",
+        #    date=snap["date"],
+        #    fig1_html=snap["fig1_html"],
+        #    fig2_html=snap["fig2_html"],
+        #    fig3_html=snap["fig3_html"],
+        #    table_html=snap["table"],
+        #    version=snap["version"],
+        #    countdown_seconds=max(0, snap["next_update"] - time.time()),
+        #    flags_present=flags_present,
+        #)
+        return render_template("index_test.html",)
 
     @app.route("/row_clicked", methods=["POST"])
     def row_clicked() -> dict:

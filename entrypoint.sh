@@ -54,10 +54,12 @@ echo "✓ Database setup complete"
 # Export environment to run the app
 export PYTHONUNBUFFERED=1
 export PGPASSWORD=""
+export DATA_DIR="/app/outputs/"
 
 echo "🚀 Starting Rubin Sunrise application on port 8000..."
 echo "Running in Docker container: YES ✓"
-python -m rubin_sunrise both
+#python -m rubin_sunrise both
+python -m rubin_sunrise.collector.new_collector_main
 
 # Cleanup: stop PostgreSQL when Flask exits
 kill $POSTGRES_PID 2>/dev/null || true

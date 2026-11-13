@@ -15,6 +15,7 @@ Public API
 import numpy as np
 import healpy as hp
 from astropy.io import fits
+import os
 
 from rubin_sunrise.collector.lsst import (
     rsv_service, 
@@ -79,6 +80,7 @@ def _save_file(hpx_masks, nside, filepath, date):
 
     for band in BANDS:
         filename = filepath + date+'_'+band+'.fits'
+        print(filename)
         fits.writeto(filename, hpx_masks[band], header=hdr, overwrite=True)
 
     return
@@ -117,11 +119,11 @@ def populate_sky(nside, db_type,
 
 def loop_sky():
 
-    dates = ['2026-11-06','2026-11-07','2026-11-08','2026-11-09','2026-11-10']
+    dates = ['2026-11-06']
 
     for date in dates:
-        populate_sky(256, 'rsv', 
+        populate_sky(128, 'rsv', 
                     idx_day=None, date=date, save_file=True, 
-                    filepath='/home/aordog/Work/candiapl/rubin-sunrise/data/')
+                    filepath= os.getenv('DATA_DIR', './data/'))
 
     return

@@ -17,6 +17,8 @@ services:
       - ./templates:/app/templates:ro
       # Mount static files
       - ./static:/app/static
+      # Mount output directory for healpix files:
+      - /home/aordog/Work/candiapl/sunrise_tmp:/app/outputs
     environment:
       # Configuration can be overridden here
       QUERY_FILE: "medium_query.txt"
